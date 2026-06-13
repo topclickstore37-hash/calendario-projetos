@@ -630,10 +630,23 @@ try{const u=localStorage.getItem('gantt_url')||DEFAULT_CSV;document.getElementBy
 document.getElementById('sheetUrl').addEventListener('change',e=>{try{localStorage.setItem('gantt_url',e.target.value);}catch(e){}});
 loadPersisted();
 if(projects.length>0) render();
-// Auto-load from sheet on startup
-(function autoLoad(){
+// Auto-load + auto-refresh a cada 30s
+let _lastCsv = '';
+async function autoRefresh() {
   const url = document.getElementById('sheetUrl').value.trim();
-  if(url) loadFromSheet();
+  if (!url) return;
+  try {
+    const csv = await fetch(url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now()).then(r => r.text());
+    if (csv === _lastCsv) return;
+    _lastCsv = csv;
+    projects = parseCSV(csv);
+    persist();
+    render();
+  } catch(e) {}
+}
+(function startAutoRefresh(){
+  const url = document.getElementById('sheetUrl').value.trim();
+  if (url) { autoRefresh(); setInterval(autoRefresh, 30000); }
 })();
 </script>
 </body>
