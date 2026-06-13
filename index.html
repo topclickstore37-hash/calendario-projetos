@@ -630,6 +630,11 @@ try{const u=localStorage.getItem('gantt_url')||DEFAULT_CSV;document.getElementBy
 document.getElementById('sheetUrl').addEventListener('change',e=>{try{localStorage.setItem('gantt_url',e.target.value);}catch(e){}});
 loadPersisted();
 if(projects.length>0) render();
+// Auto-load from sheet on startup
+(function autoLoad(){
+  const url = document.getElementById('sheetUrl').value.trim();
+  if(url) loadFromSheet();
+})();
 </script>
 </body>
 </html>
