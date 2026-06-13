@@ -625,7 +625,8 @@ function showToast(msg,error=false){
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-try{const u=localStorage.getItem('gantt_url');if(u)document.getElementById('sheetUrl').value=u;}catch(e){}
+const DEFAULT_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vQbR1FrIBNJ6JC48-OJQ8PMEQ8RD5s4EvIDK8AxKNDkR8ra0bluT9oLMCsPApC4lrw89hGyu32oFjen/pub?output=csv';
+try{const u=localStorage.getItem('gantt_url')||DEFAULT_CSV;document.getElementById('sheetUrl').value=u;}catch(e){document.getElementById('sheetUrl').value=DEFAULT_CSV;}
 document.getElementById('sheetUrl').addEventListener('change',e=>{try{localStorage.setItem('gantt_url',e.target.value);}catch(e){}});
 loadPersisted();
 if(projects.length>0) render();
