@@ -170,6 +170,35 @@
 
     .days-col { display: flex; align-items: center; justify-content: flex-end; padding: 0 8px; }
     .days-val { font-size: 0.7rem; font-weight: 700; }
+
+    /* ── Alert Panel ── */
+    .alert-panel {
+      margin: 0 28px 4px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #f97316;
+    }
+    .alert-panel.hidden { display: none; }
+    .alert-header {
+      background: linear-gradient(90deg,#7c2d12,#1a1d27);
+      padding: 9px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; user-select: none;
+    }
+    .alert-header-left { display: flex; align-items: center; gap: 8px; font-size: 0.83rem; font-weight: 700; color: #fed7aa; }
+    .alert-header-right { font-size: 0.72rem; color: #fb923c; }
+    .alert-body { background: var(--surface); padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .alert-body.collapsed { display: none; }
+    .alert-chip {
+      display: flex; align-items: center; gap: 7px;
+      padding: 6px 12px; border-radius: 8px; border: 1px solid;
+      cursor: pointer; transition: opacity .15s; font-size: 0.78rem;
+    }
+    .alert-chip:hover { opacity: 0.8; }
+    .alert-chip-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .alert-chip-name { font-weight: 600; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .alert-chip-client { color: var(--muted); font-size: 0.72rem; }
+    .alert-chip-days { font-weight: 700; margin-left: 4px; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -201,6 +230,14 @@
 </div>
 
 <div class="stats" id="stats"></div>
+
+<div class="alert-panel hidden" id="alertPanel">
+  <div class="alert-header" onclick="toggleAlerts()">
+    <div class="alert-header-left">⚠️ Prazos Críticos</div>
+    <div class="alert-header-right" id="alertHeaderRight">▾ recolher</div>
+  </div>
+  <div class="alert-body" id="alertBody"></div>
+</div>
 
 <div class="filters">
   <button class="filter-btn active" onclick="setFilter('todos',this)">Todos</button>
@@ -429,6 +466,59 @@ function renderStats() {
     <div class="stat-card"><div class="val" style="color:#22c55e">${concluidos}</div><div class="lbl">Concluídos</div></div>`;
 }
 
+// ── Alerts ───────────────────────────────────────────────────────────────────
+let alertsCollapsed = false;
+function toggleAlerts() {
+  alertsCollapsed = !alertsCollapsed;
+  document.getElementById('alertBody').classList.toggle('collapsed', alertsCollapsed);
+  document.getElementById('alertHeaderRight').textContent = alertsCollapsed ? '▸ expandir' : '▾ recolher';
+}
+
+function renderAlerts() {
+  const panel = document.getElementById('alertPanel');
+  const body  = document.getElementById('alertBody');
+  // Urgentes = não concluído, prazo ≤ 7 dias (inclui atrasados)
+  const urgent = projects
+    .filter(p => p.status !== 'concluído')
+    .map(p => ({ ...p, dl: daysLeft(p.prazo) }))
+    .filter(p => p.dl !== null && p.dl <= 7)
+    .sort((a, b) => a.dl - b.dl);
+
+  if (!urgent.length) { panel.classList.add('hidden'); return; }
+  panel.classList.remove('hidden');
+
+  body.innerHTML = urgent.map(p => {
+    const color = urgencyColor(p.dl, p.status);
+    const border = color + '55';
+    const daysLabel = p.dl < 0
+      ? `${Math.abs(p.dl)}d atrasado`
+      : p.dl === 0 ? 'vence hoje!'
+      : `${p.dl}d restantes`;
+    const idx = projects.indexOf(projects.find(x => x.nome === p.nome && x.prazo === p.prazo));
+    return `
+      <div class="alert-chip" style="background:${color}18;border-color:${border};color:${color}"
+           onclick="scrollToProject(${idx})">
+        <div class="alert-chip-dot" style="background:${color}"></div>
+        <div>
+          <div class="alert-chip-name" title="${p.nome}">${p.nome}</div>
+          ${p.cliente ? `<div class="alert-chip-client">👤 ${p.cliente}</div>` : ''}
+        </div>
+        <div class="alert-chip-days">${daysLabel}</div>
+      </div>`;
+  }).join('');
+}
+
+function scrollToProject(i) {
+  const el = document.getElementById(`row-${i}`);
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.style.outline = '2px solid #f97316';
+  setTimeout(() => el.style.outline = '', 1800);
+  // Also open description if exists
+  const desc = document.getElementById(`desc-${i}`);
+  if (desc && !desc.classList.contains('open')) toggleDesc(i);
+}
+
 function setFilter(s,btn){
   filterStatus=s;
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
@@ -437,6 +527,7 @@ function setFilter(s,btn){
 
 function render() {
   renderStats();
+  renderAlerts();
   let filtered=projects;
   if (filterStatus==='atrasado') filtered=projects.filter(p=>{const dl=daysLeft(p.prazo);return dl!==null&&dl<0&&p.status!=='concluído';});
   else if (filterStatus!=='todos') filtered=projects.filter(p=>p.status===filterStatus);
