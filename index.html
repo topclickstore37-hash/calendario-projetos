@@ -626,6 +626,14 @@ function render() {
   renderMobileList(filtered);
 }
 
+// ── Merge sheet + local-only projects ────────────────────────────────────────
+function mergeWithSheet(parsed) {
+  // Projetos locais que NÃO estão na planilha (criados via + Novo Projeto)
+  const sheetNames = parsed.map(p => p.nome.trim().toLowerCase());
+  const localOnly  = projects.filter(p => p._local && !sheetNames.includes(p.nome.trim().toLowerCase()));
+  return [...parsed, ...localOnly];
+}
+
 // ── Load from Sheet ───────────────────────────────────────────────────────────
 async function loadFromSheet() {
   const url=document.getElementById('sheetUrl').value.trim();
@@ -640,8 +648,9 @@ async function loadFromSheet() {
     if (!csv||csv.trim().startsWith('<')) throw new Error('A planilha não retornou CSV. Verifique se está publicada corretamente em Arquivo → Compartilhar → Publicar na Web → CSV.');
     const parsed=parseCSV(csv);
     if (parsed.length===0) throw new Error('Planilha vazia ou sem dados reconhecidos.');
-    projects=parsed; _lastCsv=csv; persist(); render();
-    showToast('✅ '+projects.length+' atividades carregadas');
+    projects=mergeWithSheet(parsed); _lastCsv=csv; persist(); render();
+    const local=projects.filter(p=>p._local).length;
+    showToast('✅ '+projects.length+' atividades'+(local>0?' ('+local+' só locais)':''));
   } catch(e){
     projects=backup; render();
     showToast('Erro: '+e.message,true);
@@ -719,7 +728,7 @@ function saveProject(){
     else { showToast('Selecione uma atividade para excluir',true); }
     return;
   }
-  if(editingIndex!==null) projects[editingIndex]=p; else projects.push(p);
+  if(editingIndex!==null){ projects[editingIndex]=p; } else { p._local=true; projects.push(p); }
   persist(); render(); closeModal();
   showToast(editingIndex!==null?'Atividade atualizada':'Atividade adicionada');
 }
@@ -750,7 +759,7 @@ async function autoRefresh() {
     const parsed = parseCSV(csv);
     if (parsed.length === 0) return; // nunca apaga dados com resultado vazio
     _lastCsv = csv;
-    projects = parsed;
+    projects = mergeWithSheet(parsed);
     persist();
     render();
   } catch(e) { /* silencioso — mantém dados atuais */ }
