@@ -315,6 +315,7 @@
           <option value="em andamento">Em andamento</option>
           <option value="pausado">Pausado</option>
           <option value="concluído">Concluído</option>
+          <option value="excluir">🗑️ Excluir atividade</option>
         </select>
       </div>
       <div class="form-row">
@@ -713,6 +714,11 @@ function saveProject(){
     status:document.getElementById('fStatus').value, progresso:document.getElementById('fProgresso').value,
     descricao:document.getElementById('fDesc').value.trim(),
   };
+  if(p.status==='excluir'){
+    if(editingIndex!==null){ projects.splice(editingIndex,1); persist(); render(); closeModal(); showToast('🗑️ Atividade excluída'); }
+    else { showToast('Selecione uma atividade para excluir',true); }
+    return;
+  }
   if(editingIndex!==null) projects[editingIndex]=p; else projects.push(p);
   persist(); render(); closeModal();
   showToast(editingIndex!==null?'Atividade atualizada':'Atividade adicionada');
