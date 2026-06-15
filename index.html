@@ -682,14 +682,15 @@ function parseCSV(csv) {
 // ── Demo ──────────────────────────────────────────────────────────────────────
 function useDemoData(){
   function add(n){const d=new Date(today);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+  // _demo:true → esses projetos são puramente locais e nunca voltam pelo Carregar/autoRefresh
   projects=[
-    {nome:'Instalação Elétrica – Setor A',cliente:'Carlos Mota',responsavel:'Jonas',inicio:add(-10),prazo:add(2),status:'em andamento',progresso:'75',descricao:'Instalação de tomadas, disjuntores e quadro de distribuição no setor A do galpão. Inclui passagem de eletrodutos e identificação de circuitos conforme projeto.'},
-    {nome:'Instalação Elétrica – Setor B',cliente:'Carlos Mota',responsavel:'Jonas',inicio:add(-3),prazo:add(12),status:'em andamento',progresso:'20',descricao:'Segunda etapa da instalação no cliente Carlos Mota. Setor B: iluminação de emergência, tomadas industriais 3F e aterramento.'},
-    {nome:'Painel de Comando CLP',cliente:'Metalsul Ltda',responsavel:'Jonas',inicio:add(-5),prazo:add(15),status:'em andamento',progresso:'30',descricao:'Montagem de painel com CLP Siemens S7-1200. Programação de intertravamentos e alarmes. Comissionamento previsto para semana 3.'},
-    {nome:'Projeto Fotovoltaico 15kWp',cliente:'Supermercado Bom Preço',responsavel:'Jonas',inicio:add(-20),prazo:add(-3),status:'em andamento',progresso:'60',descricao:'Sistema fotovoltaico 15kWp, 36 módulos de 420W. Inversores Fronius 12kW. Aguardando aprovação da concessionária para conexão.'},
-    {nome:'Adequação NBR 5410 – Galpão',cliente:'Translog SA',responsavel:'Jonas',inicio:add(-30),prazo:add(-15),status:'concluído',progresso:'100',descricao:'Adequação completa da instalação elétrica ao padrão NBR 5410. Laudo emitido e entregue ao cliente.'},
-    {nome:'Dimensionamento Subestação 300kVA',cliente:'Condomínio Parque Verde',responsavel:'Jonas',inicio:add(2),prazo:add(20),status:'em andamento',progresso:'10',descricao:'Projeto e dimensionamento de subestação transformadora 300kVA. Inclui SPDA, CFTV e infraestrutura de dados.'},
-    {nome:'Revisão Quadro Geral BT',cliente:'Fábrica Têxtil Norte',responsavel:'Jonas',inicio:add(-1),prazo:add(0),status:'em andamento',progresso:'80',descricao:'Revisão e substituição de disjuntores no QG-BT. Medição de isolamento e termografia já realizadas. Pendente: troca do relé de falta à terra.'},
+    {_demo:true,nome:'Instalação Elétrica – Setor A',cliente:'Carlos Mota',responsavel:'Jonas',inicio:add(-10),prazo:add(2),status:'em andamento',progresso:'75',descricao:'Instalação de tomadas, disjuntores e quadro de distribuição no setor A do galpão. Inclui passagem de eletrodutos e identificação de circuitos conforme projeto.'},
+    {_demo:true,nome:'Instalação Elétrica – Setor B',cliente:'Carlos Mota',responsavel:'Jonas',inicio:add(-3),prazo:add(12),status:'em andamento',progresso:'20',descricao:'Segunda etapa da instalação no cliente Carlos Mota. Setor B: iluminação de emergência, tomadas industriais 3F e aterramento.'},
+    {_demo:true,nome:'Painel de Comando CLP',cliente:'Metalsul Ltda',responsavel:'Jonas',inicio:add(-5),prazo:add(15),status:'em andamento',progresso:'30',descricao:'Montagem de painel com CLP Siemens S7-1200. Programação de intertravamentos e alarmes. Comissionamento previsto para semana 3.'},
+    {_demo:true,nome:'Projeto Fotovoltaico 15kWp',cliente:'Supermercado Bom Preço',responsavel:'Jonas',inicio:add(-20),prazo:add(-3),status:'em andamento',progresso:'60',descricao:'Sistema fotovoltaico 15kWp, 36 módulos de 420W. Inversores Fronius 12kW. Aguardando aprovação da concessionária para conexão.'},
+    {_demo:true,nome:'Adequação NBR 5410 – Galpão',cliente:'Translog SA',responsavel:'Jonas',inicio:add(-30),prazo:add(-15),status:'concluído',progresso:'100',descricao:'Adequação completa da instalação elétrica ao padrão NBR 5410. Laudo emitido e entregue ao cliente.'},
+    {_demo:true,nome:'Dimensionamento Subestação 300kVA',cliente:'Condomínio Parque Verde',responsavel:'Jonas',inicio:add(2),prazo:add(20),status:'em andamento',progresso:'10',descricao:'Projeto e dimensionamento de subestação transformadora 300kVA. Inclui SPDA, CFTV e infraestrutura de dados.'},
+    {_demo:true,nome:'Revisão Quadro Geral BT',cliente:'Fábrica Têxtil Norte',responsavel:'Jonas',inicio:add(-1),prazo:add(0),status:'em andamento',progresso:'80',descricao:'Revisão e substituição de disjuntores no QG-BT. Medição de isolamento e termografia já realizadas. Pendente: troca do relé de falta à terra.'},
   ];
   persist(); render(); showToast('Dados de demonstração carregados!');
 }
@@ -741,8 +742,13 @@ function showToast(msg,error=false){
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-const DEFAULT_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vQbR1FrIBNJ6JC48-OJQ8PMEQ8RD5s4EvIDK8AxKNDkR8ra0bluT9oLMCsPApC4lrw89hGyu32oFjen/pub?output=csv';
-try{const u=localStorage.getItem('gantt_url')||DEFAULT_CSV;document.getElementById('sheetUrl').value=u;}catch(e){document.getElementById('sheetUrl').value=DEFAULT_CSV;}
+// URL da demo antiga — se ainda estiver salva no localStorage, limpar para não re-importar demos.
+const _OLD_DEMO_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vQbR1FrIBNJ6JC48-OJQ8PMEQ8RD5s4EvIDK8AxKNDkR8ra0bluT9oLMCsPApC4lrw89hGyu32oFjen/pub?output=csv';
+try{
+  let savedUrl=localStorage.getItem('gantt_url')||'';
+  if(savedUrl===_OLD_DEMO_URL){savedUrl='';localStorage.removeItem('gantt_url');}
+  document.getElementById('sheetUrl').value=savedUrl;
+}catch(e){}
 document.getElementById('sheetUrl').addEventListener('change',e=>{try{localStorage.setItem('gantt_url',e.target.value);}catch(e){}});
 loadPersisted();
 if(projects.length>0) render();
